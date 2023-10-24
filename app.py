@@ -1,5 +1,4 @@
 from vlc import MediaPlayer
-import librosa
 import json
 import numpy
 from pathlib import Path
@@ -64,14 +63,14 @@ def analyze_thunder_claps():
         with open(fp_time_series, 'r') as filehandle:
             j = json.load(filehandle)
             THUNDER_CLAP_PEAK_TIME_SERIES = numpy.array(j).ravel()
-        return
+        # return
     
-    y_data, _ = librosa.load(audio_file, sr=SAMPLE_RATE)
+    # y_data, _ = librosa.load(audio_file, sr=SAMPLE_RATE)
 
-    THUNDER_CLAP_PEAK_TIME_SERIES = y_data.ravel()
+    # THUNDER_CLAP_PEAK_TIME_SERIES = y_data.ravel()
 
-    with open(fp_time_series, 'w') as filehandle:
-        json.dump(y_data.tolist(), filehandle)
+    # with open(fp_time_series, 'w') as filehandle:
+    #     json.dump(y_data.tolist(), filehandle)
         
 
 def startup():
