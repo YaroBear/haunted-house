@@ -16,16 +16,19 @@ logger.setLevel(DEBUG)
 THUNDER_CLAP_PEAK_TIME_SERIES = None
 SAMPLE_RATE = 10000
 
+THUNDER_PATH = Path("./thunder.mp3")
+BACH_PATH = Path("./bach.mp3")
+
 def play_thunder(seconds):
     logger.debug(f"Playing thunder for {seconds} seconds")
-    process = MediaPlayer("file:///Users/yaro/Workspace/haunted-house/thunder.mp3")
+    process = MediaPlayer(THUNDER_PATH)
     process.play()
 
     threading.Timer(seconds, process.stop).start()
 
 def play_bach(seconds):
     logger.debug(f"Playing bach for {seconds} seconds")
-    process = MediaPlayer("file:///Users/yaro/Workspace/haunted-house/bach.mp3")
+    process = MediaPlayer(BACH_PATH)
     process.play()
 
     threading.Timer(seconds, process.stop).start()
@@ -54,7 +57,6 @@ def queue_claps(nd_array):
         threading.Timer(time, clap).start()
 
 def analyze_thunder_claps():
-    audio_file = Path("./thunder.mp3")
     fp_time_series = Path("output.json")
 
     global THUNDER_CLAP_PEAK_TIME_SERIES
@@ -65,7 +67,7 @@ def analyze_thunder_claps():
             THUNDER_CLAP_PEAK_TIME_SERIES = numpy.array(j).ravel()
         # return
     
-    # y_data, _ = librosa.load(audio_file, sr=SAMPLE_RATE)
+    # y_data, _ = librosa.load(THUNDER_PATH, sr=SAMPLE_RATE)
 
     # THUNDER_CLAP_PEAK_TIME_SERIES = y_data.ravel()
 
