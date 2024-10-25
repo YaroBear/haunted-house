@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Haunted House</title>
+        <style>
+            body {
+                background-color: #000;
+                color: #fff;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                height: 100vh;
+                margin: 0;
+                font-family: "Creepster", cursive;
+            }
+
+            button {
+                background-color: #333;
+                color: #fff;
+                border: 2px solid #fff;
+                padding: 15px 30px;
+                font-size: 1.5em;
+                cursor: pointer;
+                transition: all 0.3s ease;
+                text-transform: uppercase;
+                font-family: "Creepster", cursive;
+            }
+
+            button:hover {
+                background-color: #555;
+                border-color: #f00;
+                color: #f00;
+            }
+
+            @media (max-width: 600px) {
+                button {
+                    font-size: 1em;
+                    padding: 10px 20px;
+                }
+            }
+
+            @import url("https://fonts.googleapis.com/css2?family=Creepster&display=swap");
+        </style>
+        <script type="text/javascript">
+            document.addEventListener("DOMContentLoaded", function () {
+                document
+                    .querySelector("button")
+                    .addEventListener("click", function () {
+                        const url = "http://127.0.0.1:5000/play";
+                        fetch(url)
+                            .then((response) => response.json())
+                            .then((data) => {
+                                console.log(data);
+                            });
+                    });
+            });
+        </script>
+    </head>
+
+    <body>
+        <button>Play</button>
+    </body>
+</html>

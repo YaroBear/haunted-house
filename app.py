@@ -1,89 +1,61 @@
-from vlc import MediaPlayer
-import json
-import numpy
+import serial, time, threading, serial.tools.list_ports
+from flask import Flask, send_from_directory, jsonify
 from pathlib import Path
-from flask import Flask
-import threading
-from logging import getLogger, StreamHandler, DEBUG
-from scipy.signal import find_peaks
-
-app = Flask(__name__)
-
-logger = getLogger(__name__)
-logger.addHandler(StreamHandler())
-logger.setLevel(DEBUG)
-
-THUNDER_CLAP_PEAK_TIME_SERIES = None
-SAMPLE_RATE = 10000
+from vlc import MediaPlayer
 
 THUNDER_PATH = Path("./thunder.mp3")
 BACH_PATH = Path("./bach.mp3")
+BAUD_RATE = 9600
+SERIAL_PORT = ""
 
-def play_thunder(seconds):
-    logger.debug(f"Playing thunder for {seconds} seconds")
+# Time delays in seconds
+time_delays = [3, 2, 2, 5, 1, 4]
+
+def get_serial_port():
+    ports = list(serial.tools.list_ports.comports())
+    if not ports:
+        raise Exception("No serial ports found")
+    for port in ports:
+        print(f"Found port: {port.device} - {port.description}")
+        if "IOUSBHostDevice" in port.description:
+            return port.device
+    raise Exception("No Arduino Uno found")
+
+def queue_lightning_serial_commands():
+    with serial.Serial(SERIAL_PORT, BAUD_RATE) as ser:
+        for delay in time_delays:
+            time.sleep(delay)
+            ser.write(b'1')
+
+def send_stop_strobe_command():
+    with serial.Serial(SERIAL_PORT, BAUD_RATE) as ser:
+        ser.write(b'2')
+
+def play_thunder():
     process = MediaPlayer(THUNDER_PATH)
     process.play()
 
-    threading.Timer(seconds, process.stop).start()
-
-def play_bach(seconds):
-    logger.debug(f"Playing bach for {seconds} seconds")
+def play_bach(seconds=16):
     process = MediaPlayer(BACH_PATH)
     process.play()
-
     threading.Timer(seconds, process.stop).start()
 
-# def filter_level(nd_arr, level=0.3):
+SERIAL_PORT = get_serial_port()
 
-def clap():
-    print("clap\r")
-
-# def naive_find_peaks(nd_array, level=0.5, sample_rate=SAMPLE_RATE):
-#     idx = numpy.argwhere(nd_array >= 0.5).ravel()
-#     to_seconds = numpy.vectorize(lambda v: v / sample_rate)
-#     seconds = to_seconds(idx)
-#     print(seconds)
-#     print(len(seconds))
-
-def queue_claps(nd_array):
-    peaks, _ = find_peaks(nd_array, height=0.5, distance=1000)
-    to_seconds = numpy.vectorize(lambda v: v / SAMPLE_RATE)
-    time_series_second_markers = to_seconds(peaks)
-
-    logger.debug(f"Peaks: {peaks}")
-    logger.debug(f"Peak time series second markers: {time_series_second_markers}")
-
-    for time in time_series_second_markers:
-        threading.Timer(time, clap).start()
-
-def analyze_thunder_claps():
-    fp_time_series = Path("output.json")
-
-    global THUNDER_CLAP_PEAK_TIME_SERIES
-
-    if fp_time_series.is_file():
-        with open(fp_time_series, 'r') as filehandle:
-            j = json.load(filehandle)
-            THUNDER_CLAP_PEAK_TIME_SERIES = numpy.array(j).ravel()
-        # return
-    
-    # y_data, _ = librosa.load(THUNDER_PATH, sr=SAMPLE_RATE)
-
-    # THUNDER_CLAP_PEAK_TIME_SERIES = y_data.ravel()
-
-    # with open(fp_time_series, 'w') as filehandle:
-    #     json.dump(y_data.tolist(), filehandle)
-        
-
-def startup():
-    analyze_thunder_claps()
-
-startup()
+app = Flask(__name__)
 
 @app.route("/")
-def haunted_house():
-    queue_claps(THUNDER_CLAP_PEAK_TIME_SERIES)
-    play_thunder(22)
-    play_bach(16)
+def index():
+    return send_from_directory('static', 'index.html')
 
-    return "done"
+@app.route("/play")
+def haunted_house():
+    send_stop_strobe_command()
+    time.sleep(1)
+    play_thunder()
+    play_bach()
+
+    # Start a thread to send serial commands
+    threading.Thread(target=queue_lightning_serial_commands).start()
+
+    return jsonify({"status": "done"})
